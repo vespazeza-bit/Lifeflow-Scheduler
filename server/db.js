@@ -2,7 +2,7 @@ const initSqlJs = require('sql.js');
 const path = require('path');
 const fs = require('fs');
 
-const DB_PATH = path.join(__dirname, 'lifeflow.db');
+const DB_PATH = process.env.VERCEL ? '/tmp/lifeflow.db' : path.join(__dirname, 'lifeflow.db');
 
 let db = null;
 

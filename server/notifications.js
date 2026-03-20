@@ -177,4 +177,4 @@ function startNotificationCron() {
   console.log('[Notifications] Cron job started (every minute).');
 }
 
-module.exports = { startNotificationCron };
+module.exports = { startNotificationCron, checkAndSendNotifications };

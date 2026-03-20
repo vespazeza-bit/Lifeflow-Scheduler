@@ -11,6 +11,19 @@ const JWT_SECRET = 'lifeflow_secret_key_2024';
 app.use(cors());
 app.use(express.json());
 
+// Lazy DB init for Vercel serverless
+let dbReady = false;
+let dbInitPromise = null;
+async function ensureDb() {
+  if (dbReady) return;
+  if (!dbInitPromise) dbInitPromise = initDb();
+  await dbInitPromise;
+  dbReady = true;
+}
+app.use(async (req, res, next) => {
+  try { await ensureDb(); next(); } catch (err) { res.status(500).json({ error: 'DB init failed' }); }
+});
+
 // ─── Auth Middleware ───────────────────────────────────────────────────────────
 function authenticate(req, res, next) {
   const authHeader = req.headers.authorization;
@@ -387,15 +400,29 @@ app.get('/api/notifications/status', authenticate, (req, res) => {
   }
 });
 
-// ─── Start Server ──────────────────────────────────────────────────────────────
-const { startNotificationCron } = require('./notifications');
+// ─── Cron Endpoint (for Vercel Cron Jobs) ─────────────────────────────────────
+const { startNotificationCron, checkAndSendNotifications } = require('./notifications');
 
-initDb().then(() => {
-  startNotificationCron();
-  app.listen(PORT, () => {
-    console.log(`LifeFlow Server running on http://localhost:${PORT}`);
-  });
-}).catch(err => {
-  console.error('Failed to init database:', err);
-  process.exit(1);
+app.get('/api/cron/notify', async (req, res) => {
+  try {
+    await checkAndSendNotifications();
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
+
+// ─── Start Server ──────────────────────────────────────────────────────────────
+if (!process.env.VERCEL) {
+  initDb().then(() => {
+    startNotificationCron();
+    app.listen(PORT, '0.0.0.0', () => {
+      console.log(`LifeFlow Server running on http://localhost:${PORT}`);
+    });
+  }).catch(err => {
+    console.error('Failed to init database:', err);
+    process.exit(1);
+  });
+}
+
+module.exports = app;
