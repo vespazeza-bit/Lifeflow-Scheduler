@@ -16,6 +16,6 @@
     { "src": "/(.*)", "dest": "/client/$1" }
   ],
   "crons": [
-    { "path": "/api/cron/notify", "schedule": "* * * * *" }
+    { "path": "/api/cron/notify", "schedule": "0 0 * * *" }
   ]
 }
