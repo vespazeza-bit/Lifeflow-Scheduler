@@ -1,0 +1,14 @@
+// ⚠️ กรอก Firebase Service Account Key ของคุณที่นี่
+// วิธีได้มา: Firebase Console → Project Settings → Service accounts → Generate new private key
+module.exports = {
+  serviceAccount: {
+    type: "service_account",
+    project_id: "YOUR_PROJECT_ID",
+    private_key_id: "YOUR_PRIVATE_KEY_ID",
+    private_key: "YOUR_PRIVATE_KEY",
+    client_email: "YOUR_CLIENT_EMAIL",
+    client_id: "YOUR_CLIENT_ID",
+    auth_uri: "https://accounts.google.com/o/oauth2/auth",
+    token_uri: "https://oauth2.googleapis.com/token",
+  }
+};
