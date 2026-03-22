@@ -22,7 +22,7 @@ let messaging = null;
 try {
   messaging = getMessaging(app);
 } catch (e) {
-  // Not supported (HTTP non-localhost)
+  console.error('[Firebase] messaging init failed:', e.message);
 }
 
 export { messaging, getToken, onMessage, VAPID_KEY };

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
-import { Plus, Trash2, BookTemplate, Play, X, Clock } from 'lucide-react';
+import { Plus, Trash2, BookTemplate, Play, X, Clock, Edit2 } from 'lucide-react';
 import Modal from '../components/Modal';
 import ThaiDateTimePicker from '../components/ThaiDateTimePicker';
 import { getLocalToday, formatDate } from '../utils/dateFormat';
@@ -16,6 +16,7 @@ export default function Templates() {
   const [newTemplate, setNewTemplate] = useState({ name: '', items: [] });
   const [newItem, setNewItem] = useState({ activity_name: '', time: '', time_dt: '' });
   const [saving, setSaving] = useState(false);
+  const [editTemplate, setEditTemplate] = useState(null); // template being edited
 
   useEffect(() => { loadTemplates(); }, []);
 
@@ -51,6 +52,35 @@ export default function Templates() {
       setNewTemplate({ name: '', items: [] });
       loadTemplates();
     } catch { toast.error('Failed to create template'); }
+    finally { setSaving(false); }
+  };
+
+  const openEdit = (template) => {
+    setEditTemplate({ ...template, items: [...(template.items || [])] });
+  };
+
+  const editAddItem = () => {
+    if (!newItem.activity_name.trim()) { toast.error('กรุณากรอกชื่อกิจกรรม'); return; }
+    const time = newItem.time_dt ? newItem.time_dt.split('T')[1]?.slice(0, 5) : '';
+    setEditTemplate(t => ({ ...t, items: [...t.items, { activity_name: newItem.activity_name, time }] }));
+    setNewItem({ activity_name: '', time: '', time_dt: '' });
+  };
+
+  const editRemoveItem = (index) => {
+    setEditTemplate(t => ({ ...t, items: t.items.filter((_, i) => i !== index) }));
+  };
+
+  const saveEdit = async () => {
+    if (!editTemplate.name.trim()) { toast.error('Template name is required'); return; }
+    if (editTemplate.items.length === 0) { toast.error('Add at least one activity'); return; }
+    setSaving(true);
+    try {
+      await axios.put(`/api/templates/${editTemplate.template_id}`, { name: editTemplate.name, items: editTemplate.items });
+      toast.success('Template updated!');
+      setEditTemplate(null);
+      setNewItem({ activity_name: '', time: '', time_dt: '' });
+      loadTemplates();
+    } catch { toast.error('Failed to update template'); }
     finally { setSaving(false); }
   };
 
@@ -106,6 +136,9 @@ export default function Templates() {
                 <div className="template-actions">
                   <button className="icon-btn apply" onClick={() => setApplyTemplate(template)} title="Apply to date">
                     <Play size={14} />
+                  </button>
+                  <button className="icon-btn edit" onClick={() => openEdit(template)} title="Edit">
+                    <Edit2 size={14} />
                   </button>
                   <button className="icon-btn del" onClick={() => deleteTemplate(template.template_id)} title="Delete">
                     <Trash2 size={14} />
@@ -182,6 +215,58 @@ export default function Templates() {
             </button>
           </div>
         </div>
+      </Modal>
+
+      {/* Edit Modal */}
+      <Modal isOpen={!!editTemplate} onClose={() => { setEditTemplate(null); setNewItem({ activity_name: '', time: '', time_dt: '' }); }} title="Edit Template" width="550px">
+        {editTemplate && (
+          <div className="create-template">
+            <div className="form-group">
+              <label>Template Name</label>
+              <input
+                type="text" placeholder="e.g. Morning Routine"
+                value={editTemplate.name}
+                onChange={e => setEditTemplate(t => ({ ...t, name: e.target.value }))}
+              />
+            </div>
+            <div className="items-section">
+              <label>Activities</label>
+              {editTemplate.items.length > 0 && (
+                <div className="items-list">
+                  {editTemplate.items.map((item, i) => (
+                    <div key={i} className="item-row">
+                      <span className="item-dot" />
+                      <span className="item-name">{item.activity_name}</span>
+                      {item.time && <span className="item-time-sm">{item.time}</span>}
+                      <button className="remove-item" onClick={() => editRemoveItem(i)}><X size={14} /></button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div className="add-item-row">
+                <input
+                  type="text" placeholder="ชื่อกิจกรรม"
+                  value={newItem.activity_name}
+                  onChange={e => setNewItem(v => ({ ...v, activity_name: e.target.value }))}
+                  onKeyDown={e => e.key === 'Enter' && editAddItem()}
+                />
+                <div className="add-item-time">
+                  <ThaiDateTimePicker
+                    value={newItem.time_dt}
+                    onChange={v => setNewItem(prev => ({ ...prev, time_dt: v }))}
+                  />
+                </div>
+                <button className="add-item-btn" onClick={editAddItem}><Plus size={16} /></button>
+              </div>
+            </div>
+            <div className="form-actions">
+              <button className="btn-cancel" onClick={() => { setEditTemplate(null); setNewItem({ activity_name: '', time: '', time_dt: '' }); }}>Cancel</button>
+              <button className="btn-primary" onClick={saveEdit} disabled={saving}>
+                {saving ? 'Saving...' : 'Save Changes'}
+              </button>
+            </div>
+          </div>
+        )}
       </Modal>
 
       {/* Apply Modal */}

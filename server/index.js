@@ -325,6 +325,25 @@ app.post('/api/templates', authenticate, (req, res) => {
   }
 });
 
+app.put('/api/templates/:id', authenticate, (req, res) => {
+  const { name, items } = req.body;
+  if (!name) return res.status(400).json({ error: 'Template name is required' });
+  try {
+    const template = queryOne('SELECT * FROM templates WHERE template_id = ? AND user_id = ?', [req.params.id, req.user.user_id]);
+    if (!template) return res.status(404).json({ error: 'Template not found' });
+    run('UPDATE templates SET name = ? WHERE template_id = ?', [name, req.params.id]);
+    run('DELETE FROM template_items WHERE template_id = ?', [req.params.id]);
+    if (items && items.length > 0) {
+      items.forEach(item => run('INSERT INTO template_items (template_id, activity_name, time) VALUES (?, ?, ?)', [req.params.id, item.activity_name, item.time || null]));
+    }
+    const updated = queryOne('SELECT * FROM templates WHERE template_id = ?', [req.params.id]);
+    const updatedItems = query('SELECT * FROM template_items WHERE template_id = ?', [req.params.id]);
+    res.json({ ...updated, items: updatedItems });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.delete('/api/templates/:id', authenticate, (req, res) => {
   try {
     const template = queryOne('SELECT * FROM templates WHERE template_id = ? AND user_id = ?', [req.params.id, req.user.user_id]);
