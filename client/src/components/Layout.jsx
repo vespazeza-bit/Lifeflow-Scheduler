@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import {
-  LayoutDashboard, Calendar, ListTodo, BookTemplate, BarChart3,
+  LayoutDashboard, Calendar, ListTodo, BookTemplate,
   LogOut, Menu, X, Zap
 } from 'lucide-react';
 import NotificationBell from './NotificationBell';
@@ -12,7 +12,6 @@ const navItems = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard', end: true },
   { to: '/schedule', icon: Calendar, label: 'Schedule' },
   { to: '/templates', icon: BookTemplate, label: 'Templates' },
-  { to: '/stats', icon: BarChart3, label: 'Stats' },
 ];
 
 export default function Layout() {

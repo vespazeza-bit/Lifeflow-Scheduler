@@ -258,7 +258,7 @@
 .log-table { display: flex; flex-direction: column; gap: 0; }
 .log-header {
   display: grid;
-  grid-template-columns: 1fr 110px 90px;
+  grid-template-columns: 1fr 110px 1fr 90px;
   padding: 0.4rem 0.6rem;
   font-size: 0.75rem;
   font-weight: 600;
@@ -268,14 +268,17 @@
 }
 .log-row {
   display: grid;
-  grid-template-columns: 1fr 110px 90px;
+  grid-template-columns: 1fr 110px 1fr 90px;
   padding: 0.5rem 0.6rem;
   font-size: 0.85rem;
   border-top: 1px solid rgba(255,255,255,0.05);
+  align-items: center;
 }
 .log-row:hover { background: rgba(255,255,255,0.03); }
-.log-title { font-weight: 500; truncate: true; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.log-title { font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .log-date { color: var(--text-muted); font-size: 0.8rem; }
+.log-reason { font-size: 0.82rem; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.log-no-reason { opacity: 0.3; }
 .log-status { font-size: 0.75rem; font-weight: 600; text-transform: capitalize; border-radius: 20px; padding: 0.15rem 0.5rem; width: fit-content; }
 .log-status.completed { background: rgba(34,197,94,0.15); color: #22c55e; }
 .log-status.missed    { background: rgba(239,68,68,0.15);  color: #ef4444; }
@@ -287,5 +290,5 @@
   .today-grid { grid-template-columns: 1fr; }
   .today-ring-card { grid-row: auto; }
   .month-summary { grid-template-columns: repeat(2, 1fr); }
-  .log-header, .log-row { grid-template-columns: 1fr 85px 75px; }
+  .log-header, .log-row { grid-template-columns: 1fr 85px 1fr 75px; }
 }

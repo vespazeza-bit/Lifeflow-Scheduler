@@ -9,7 +9,6 @@ import Dashboard from './pages/Dashboard';
 import Schedule from './pages/Schedule';
 import Activities from './pages/Activities';
 import Templates from './pages/Templates';
-import Stats from './pages/Stats';
 
 function PrivateRoute({ children }) {
   const { user, loading } = useAuth();
@@ -47,7 +46,6 @@ export default function App() {
             <Route path="schedule" element={<Schedule />} />
             <Route path="activities" element={<Activities />} />
             <Route path="templates" element={<Templates />} />
-            <Route path="stats" element={<Stats />} />
           </Route>
         </Routes>
       </BrowserRouter>

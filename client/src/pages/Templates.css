@@ -125,7 +125,7 @@
 .items-section { display: flex; flex-direction: column; gap: 0.6rem; }
 .items-section > label { font-size: 0.83rem; font-weight: 500; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.4px; }
 
-.items-list { display: flex; flex-direction: column; gap: 0.4rem; background: var(--bg-input); border-radius: 8px; padding: 0.6rem; }
+.items-list { display: flex; flex-direction: column; gap: 0.4rem; background: var(--bg-input); border-radius: 8px; padding: 0.6rem; max-height: 240px; overflow-y: auto; }
 
 .item-row {
   display: flex;
@@ -147,6 +147,40 @@
   transition: all 0.2s;
 }
 .remove-item:hover { color: var(--danger); }
+
+.icon-btn-sm {
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3px;
+  border-radius: 4px;
+  color: var(--text-muted);
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+.icon-btn-sm.edit:hover { background: rgba(99,102,241,0.1); color: var(--primary); }
+.icon-btn-sm.remove:hover { background: rgba(239,68,68,0.1); color: var(--danger); }
+.icon-btn-sm.confirm:hover { background: rgba(34,197,94,0.1); color: var(--success); }
+.icon-btn-sm.cancel:hover { background: rgba(239,68,68,0.1); color: var(--danger); }
+
+.item-edit-input {
+  flex: 1;
+  font-size: 0.85rem;
+  padding: 0.2rem 0.5rem;
+  border: 1px solid var(--primary);
+  border-radius: 5px;
+  background: var(--bg-main);
+  color: var(--text-main);
+  outline: none;
+}
+
+.item-edit-time {
+  width: 160px;
+  flex-shrink: 0;
+}
 
 .add-item-row {
   display: flex;

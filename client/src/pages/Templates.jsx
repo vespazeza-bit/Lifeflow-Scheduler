@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
-import { Plus, Trash2, BookTemplate, Play, X, Clock, Edit2 } from 'lucide-react';
+import { Plus, Trash2, BookTemplate, Play, X, Clock, Edit2, Check } from 'lucide-react';
 import Modal from '../components/Modal';
 import ThaiDateTimePicker from '../components/ThaiDateTimePicker';
 import { getLocalToday, formatDate } from '../utils/dateFormat';
@@ -17,6 +17,8 @@ export default function Templates() {
   const [newItem, setNewItem] = useState({ activity_name: '', time: '', time_dt: '' });
   const [saving, setSaving] = useState(false);
   const [editTemplate, setEditTemplate] = useState(null); // template being edited
+  const [editingItemIndex, setEditingItemIndex] = useState(null); // index of item being inline-edited
+  const [editingItem, setEditingItem] = useState({ activity_name: '', time_dt: '' });
 
   useEffect(() => { loadTemplates(); }, []);
 
@@ -57,6 +59,30 @@ export default function Templates() {
 
   const openEdit = (template) => {
     setEditTemplate({ ...template, items: [...(template.items || [])] });
+    setEditingItemIndex(null);
+  };
+
+  const startEditItem = (index) => {
+    const item = editTemplate.items[index];
+    const time_dt = item.time ? `1970-01-01T${item.time}` : '';
+    setEditingItemIndex(index);
+    setEditingItem({ activity_name: item.activity_name, time_dt });
+  };
+
+  const saveEditItem = (index) => {
+    if (!editingItem.activity_name.trim()) { toast.error('กรุณากรอกชื่อกิจกรรม'); return; }
+    const time = editingItem.time_dt ? editingItem.time_dt.split('T')[1]?.slice(0, 5) : '';
+    setEditTemplate(t => ({
+      ...t,
+      items: t.items.map((item, i) => i === index ? { ...item, activity_name: editingItem.activity_name, time } : item)
+    }));
+    setEditingItemIndex(null);
+    setEditingItem({ activity_name: '', time_dt: '' });
+  };
+
+  const cancelEditItem = () => {
+    setEditingItemIndex(null);
+    setEditingItem({ activity_name: '', time_dt: '' });
   };
 
   const editAddItem = () => {
@@ -218,7 +244,7 @@ export default function Templates() {
       </Modal>
 
       {/* Edit Modal */}
-      <Modal isOpen={!!editTemplate} onClose={() => { setEditTemplate(null); setNewItem({ activity_name: '', time: '', time_dt: '' }); }} title="Edit Template" width="550px">
+      <Modal isOpen={!!editTemplate} onClose={() => { setEditTemplate(null); setNewItem({ activity_name: '', time: '', time_dt: '' }); setEditingItemIndex(null); }} title="Edit Template" width="550px">
         {editTemplate && (
           <div className="create-template">
             <div className="form-group">
@@ -235,10 +261,34 @@ export default function Templates() {
                 <div className="items-list">
                   {editTemplate.items.map((item, i) => (
                     <div key={i} className="item-row">
-                      <span className="item-dot" />
-                      <span className="item-name">{item.activity_name}</span>
-                      {item.time && <span className="item-time-sm">{item.time}</span>}
-                      <button className="remove-item" onClick={() => editRemoveItem(i)}><X size={14} /></button>
+                      {editingItemIndex === i ? (
+                        <>
+                          <input
+                            type="text"
+                            className="item-edit-input"
+                            value={editingItem.activity_name}
+                            onChange={e => setEditingItem(v => ({ ...v, activity_name: e.target.value }))}
+                            onKeyDown={e => { if (e.key === 'Enter') saveEditItem(i); if (e.key === 'Escape') cancelEditItem(); }}
+                            autoFocus
+                          />
+                          <div className="item-edit-time">
+                            <ThaiDateTimePicker
+                              value={editingItem.time_dt}
+                              onChange={v => setEditingItem(prev => ({ ...prev, time_dt: v }))}
+                            />
+                          </div>
+                          <button className="icon-btn-sm confirm" onClick={() => saveEditItem(i)} title="บันทึก"><Check size={13} /></button>
+                          <button className="icon-btn-sm cancel" onClick={cancelEditItem} title="ยกเลิก"><X size={13} /></button>
+                        </>
+                      ) : (
+                        <>
+                          <span className="item-dot" />
+                          <span className="item-name">{item.activity_name}</span>
+                          {item.time && <span className="item-time-sm">{item.time}</span>}
+                          <button className="icon-btn-sm edit" onClick={() => startEditItem(i)} title="แก้ไข"><Edit2 size={13} /></button>
+                          <button className="icon-btn-sm remove" onClick={() => editRemoveItem(i)} title="ลบ"><X size={13} /></button>
+                        </>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -260,7 +310,7 @@ export default function Templates() {
               </div>
             </div>
             <div className="form-actions">
-              <button className="btn-cancel" onClick={() => { setEditTemplate(null); setNewItem({ activity_name: '', time: '', time_dt: '' }); }}>Cancel</button>
+              <button className="btn-cancel" onClick={() => { setEditTemplate(null); setNewItem({ activity_name: '', time: '', time_dt: '' }); setEditingItemIndex(null); }}>Cancel</button>
               <button className="btn-primary" onClick={saveEdit} disabled={saving}>
                 {saving ? 'Saving...' : 'Save Changes'}
               </button>

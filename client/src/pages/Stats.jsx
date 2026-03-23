@@ -219,20 +219,22 @@ export default function Stats() {
           </div>
         )}
 
-        {/* Recent logs */}
-        {monthly.logs?.length > 0 && (
+        {/* Missed logs */}
+        {monthly.logs?.filter(l => l.status === 'missed').length > 0 && (
           <div className="recent-card">
-            <div className="section-label" style={{ marginBottom: '1rem' }}>Recent Log Entries</div>
+            <div className="section-label" style={{ marginBottom: '1rem' }}>Missed Activities</div>
             <div className="log-table">
               <div className="log-header">
                 <span>Activity</span>
                 <span>Date</span>
+                <span>Reason</span>
                 <span>Status</span>
               </div>
-              {monthly.logs.map((log, i) => (
+              {monthly.logs.filter(l => l.status === 'missed').map((log, i) => (
                 <div key={i} className="log-row">
                   <span className="log-title">{log.title}</span>
                   <span className="log-date">{formatDate(log.date)}</span>
+                  <span className="log-reason">{log.reason || <span className="log-no-reason">—</span>}</span>
                   <span className={`log-status ${log.status}`}>{log.status}</span>
                 </div>
               ))}

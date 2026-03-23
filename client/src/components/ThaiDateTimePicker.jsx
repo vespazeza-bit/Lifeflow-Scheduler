@@ -30,7 +30,7 @@ function getFirstDayOfMonth(year, month) {
 
 // Clock face drawing
 function ClockFace({ hours, minutes, seconds }) {
-  const size = 100;
+  const size = 120;
   const cx = size / 2;
   const cy = size / 2;
   const r = size / 2 - 4;
@@ -80,7 +80,23 @@ function ClockFace({ hours, minutes, seconds }) {
 
 export default function ThaiDateTimePicker({ value, onChange, label }) {
   const [open, setOpen] = useState(false);
+  const [popupStyle, setPopupStyle] = useState({});
   const ref = useRef(null);
+
+  const calcPopupPosition = () => {
+    if (!ref.current) return;
+    const rect = ref.current.getBoundingClientRect();
+    const popupHeight = 340; // estimated popup height
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const spaceAbove = rect.top;
+    if (spaceBelow < popupHeight && spaceAbove > spaceBelow) {
+      // open upward
+      setPopupStyle({ bottom: window.innerHeight - rect.top + 6, left: rect.left, top: 'auto' });
+    } else {
+      // open downward
+      setPopupStyle({ top: rect.bottom + 6, left: rect.left, bottom: 'auto' });
+    }
+  };
 
   // Parse current value (format: "yyyy-MM-ddTHH:mm")
   const parseValue = (v) => {
@@ -185,7 +201,7 @@ export default function ThaiDateTimePicker({ value, onChange, label }) {
   return (
     <div className="tdtp-wrapper" ref={ref}>
       {label && <label className="tdtp-label">{label}</label>}
-      <div className="tdtp-input" onClick={() => setOpen(o => !o)}>
+      <div className="tdtp-input" onClick={() => { calcPopupPosition(); setOpen(o => !o); }}>
         <span className="tdtp-input-icon">📅</span>
         <span className={displayText ? '' : 'tdtp-placeholder'}>
           {displayText || 'เลือกวันที่และเวลา'}
@@ -193,7 +209,7 @@ export default function ThaiDateTimePicker({ value, onChange, label }) {
       </div>
 
       {open && (
-        <div className="tdtp-popup">
+        <div className="tdtp-popup" style={popupStyle}>
           {/* Title bar */}
           <div className="tdtp-titlebar">
             {selDay ? formatThai(`${selYear}-${String(selMonth+1).padStart(2,'0')}-${String(selDay).padStart(2,'0')}`, `${String(hours).padStart(2,'0')}:${String(minutes).padStart(2,'0')}`) : ''}
@@ -204,12 +220,16 @@ export default function ThaiDateTimePicker({ value, onChange, label }) {
             <div className="tdtp-cal">
               {/* Month nav */}
               <div className="tdtp-nav">
-                <button type="button" onClick={prevMonth}>◄</button>
-                <span className="tdtp-month-label">{THAI_MONTHS[viewMonth]}</span>
-                <button type="button" onClick={nextMonth}>►</button>
-                <button type="button" onClick={() => setViewYear(y => y - 1)}>◄</button>
-                <span className="tdtp-year-label">{toBE(viewYear)}</span>
-                <button type="button" onClick={() => setViewYear(y => y + 1)}>►</button>
+                <div className="tdtp-nav-row">
+                  <button type="button" onClick={prevMonth}>◄</button>
+                  <span className="tdtp-month-label">{THAI_MONTHS[viewMonth]}</span>
+                  <button type="button" onClick={nextMonth}>►</button>
+                  <button type="button" onClick={() => setViewYear(y => y - 1)}>◄</button>
+                </div>
+                <div className="tdtp-nav-row">
+                  <span className="tdtp-year-label">{toBE(viewYear)}</span>
+                  <button type="button" onClick={() => setViewYear(y => y + 1)}>►</button>
+                </div>
               </div>
 
               {/* Day headers */}

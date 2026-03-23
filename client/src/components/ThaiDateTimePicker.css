@@ -32,15 +32,13 @@
 .tdtp-placeholder { color: var(--text-muted); font-style: italic; }
 
 .tdtp-popup {
-  position: absolute;
+  position: fixed;
   z-index: 9999;
-  top: calc(100% + 6px);
-  left: 0;
   background: #dce9f5;
   border: 1px solid #9bb5cc;
   border-radius: 6px;
   box-shadow: 0 8px 32px rgba(0,0,0,0.35);
-  min-width: 380px;
+  min-width: 410px;
   font-family: 'Sarabun', 'Tahoma', sans-serif;
   color: #222;
 }
@@ -67,11 +65,17 @@
 
 .tdtp-nav {
   display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  margin-bottom: 6px;
+}
+
+.tdtp-nav-row {
+  display: flex;
   align-items: center;
   justify-content: center;
   gap: 4px;
-  margin-bottom: 6px;
-  flex-wrap: wrap;
 }
 
 .tdtp-nav button {
@@ -161,27 +165,30 @@
 .tdtp-time-inputs {
   display: flex;
   align-items: center;
-  gap: 3px;
+  gap: 2px;
   background: white;
   border: 1px solid #9bb5cc;
   border-radius: 4px;
-  padding: 4px 8px;
+  padding: 5px 10px;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 1px;
 }
 
 .tdtp-time-inputs input {
-  width: 32px;
+  width: 36px;
   border: none;
   background: transparent;
   text-align: center;
-  font-size: 0.9rem;
-  font-weight: 600;
+  font-size: 1rem;
+  font-weight: 700;
   color: #222;
   -moz-appearance: textfield;
   outline: none;
 }
 .tdtp-time-inputs input::-webkit-outer-spin-button,
 .tdtp-time-inputs input::-webkit-inner-spin-button { -webkit-appearance: none; }
-.tdtp-time-inputs span { color: #555; font-weight: 700; }
+.tdtp-time-inputs span { color: #555; font-weight: 700; font-size: 1rem; }
 
 /* ── Footer ── */
 .tdtp-footer {
