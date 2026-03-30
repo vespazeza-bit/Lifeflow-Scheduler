@@ -1,126 +1,120 @@
-const initSqlJs = require('sql.js');
-const path = require('path');
-const fs = require('fs');
+const mysql = require('mysql2/promise');
 
-const DB_PATH = process.env.VERCEL
-  ? '/tmp/lifeflow.db'
-  : process.env.DB_PATH || path.join(__dirname, 'lifeflow.db');
-
-let db = null;
-
-function saveDb() {
-  if (db) {
-    const data = db.export();
-    fs.writeFileSync(DB_PATH, Buffer.from(data));
-  }
-}
+let pool = null;
 
 async function initDb() {
-  const SQL = await initSqlJs();
+  pool = mysql.createPool({
+    host:     process.env.DB_HOST     || '127.0.0.1',
+    port:     parseInt(process.env.DB_PORT || '3306'),
+    user:     process.env.DB_USER     || 'vespazeza',
+    password: process.env.DB_PASS     || '',
+    database: process.env.DB_NAME     || 'daily_planner',
+    waitForConnections: true,
+    connectionLimit: 10,
+  });
 
-  if (fs.existsSync(DB_PATH)) {
-    const fileBuffer = fs.readFileSync(DB_PATH);
-    db = new SQL.Database(fileBuffer);
-  } else {
-    db = new SQL.Database();
-  }
+  // Test connection
+  await pool.query('SELECT 1');
 
-  db.run(`
+  // Create tables if not exist
+  await pool.query(`
     CREATE TABLE IF NOT EXISTS users (
-      user_id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT NOT NULL,
-      email TEXT UNIQUE NOT NULL,
-      password TEXT NOT NULL,
+      user_id INT AUTO_INCREMENT PRIMARY KEY,
+      name VARCHAR(255) NOT NULL,
+      email VARCHAR(255) UNIQUE NOT NULL,
+      password VARCHAR(255) NOT NULL,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS activities (
-      activity_id INTEGER PRIMARY KEY AUTOINCREMENT,
-      user_id INTEGER NOT NULL,
-      title TEXT NOT NULL,
-      start_time TEXT,
-      end_time TEXT,
-      notify_before INTEGER DEFAULT 10,
-      is_template INTEGER DEFAULT 0,
-      repeat_type TEXT DEFAULT 'none',
-      repeat_days TEXT,
-      date TEXT,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (user_id) REFERENCES users(user_id)
-    );
-
-    CREATE TABLE IF NOT EXISTS activity_logs (
-      log_id INTEGER PRIMARY KEY AUTOINCREMENT,
-      activity_id INTEGER NOT NULL,
-      user_id INTEGER NOT NULL,
-      date TEXT NOT NULL,
-      status TEXT DEFAULT 'pending',
-      actual_time TEXT,
-      reason TEXT,
-      FOREIGN KEY (activity_id) REFERENCES activities(activity_id)
-    );
-
-    CREATE TABLE IF NOT EXISTS templates (
-      template_id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT NOT NULL,
-      user_id INTEGER NOT NULL,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (user_id) REFERENCES users(user_id)
-    );
-
-    CREATE TABLE IF NOT EXISTS template_items (
-      template_item_id INTEGER PRIMARY KEY AUTOINCREMENT,
-      template_id INTEGER NOT NULL,
-      activity_name TEXT NOT NULL,
-      time TEXT,
-      FOREIGN KEY (template_id) REFERENCES templates(template_id)
-    );
-
-    CREATE TABLE IF NOT EXISTS fcm_tokens (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      user_id INTEGER NOT NULL,
-      token TEXT NOT NULL,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      UNIQUE(user_id, token)
-    );
-
-    CREATE TABLE IF NOT EXISTS notification_sent (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      activity_id INTEGER NOT NULL,
-      user_id INTEGER NOT NULL,
-      date TEXT NOT NULL,
-      sent_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      UNIQUE(activity_id, user_id, date)
-    );
+    )
   `);
 
-  saveDb();
-  return db;
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS activities (
+      activity_id INT AUTO_INCREMENT PRIMARY KEY,
+      user_id INT NOT NULL,
+      title VARCHAR(255) NOT NULL,
+      start_time VARCHAR(10),
+      end_time VARCHAR(10),
+      notify_before INT DEFAULT 10,
+      is_template TINYINT DEFAULT 0,
+      repeat_type VARCHAR(20) DEFAULT 'none',
+      repeat_days VARCHAR(50),
+      date VARCHAR(20),
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users(user_id)
+    )
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS activity_logs (
+      log_id INT AUTO_INCREMENT PRIMARY KEY,
+      activity_id INT NOT NULL,
+      user_id INT NOT NULL,
+      date VARCHAR(20) NOT NULL,
+      status VARCHAR(20) DEFAULT 'pending',
+      actual_time VARCHAR(10),
+      reason TEXT,
+      FOREIGN KEY (activity_id) REFERENCES activities(activity_id)
+    )
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS templates (
+      template_id INT AUTO_INCREMENT PRIMARY KEY,
+      name VARCHAR(255) NOT NULL,
+      user_id INT NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users(user_id)
+    )
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS template_items (
+      template_item_id INT AUTO_INCREMENT PRIMARY KEY,
+      template_id INT NOT NULL,
+      activity_name VARCHAR(255) NOT NULL,
+      time VARCHAR(10),
+      FOREIGN KEY (template_id) REFERENCES templates(template_id)
+    )
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS fcm_tokens (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      user_id INT NOT NULL,
+      token TEXT NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE KEY uniq_user_token (user_id, token(255))
+    )
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS notification_sent (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      activity_id INT NOT NULL,
+      user_id INT NOT NULL,
+      date VARCHAR(20) NOT NULL,
+      sent_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE KEY uniq_notif (activity_id, user_id, date)
+    )
+  `);
+
+  console.log('MySQL connected and tables ready');
+  return pool;
 }
 
-// Helper functions that mimic better-sqlite3 API
-function query(sql, params = []) {
-  const stmt = db.prepare(sql);
-  stmt.bind(params);
-  const rows = [];
-  while (stmt.step()) {
-    rows.push(stmt.getAsObject());
-  }
-  stmt.free();
+async function query(sql, params = []) {
+  const [rows] = await pool.query(sql, params);
   return rows;
 }
 
-function queryOne(sql, params = []) {
-  const rows = query(sql, params);
+async function queryOne(sql, params = []) {
+  const rows = await query(sql, params);
   return rows[0] || null;
 }
 
-function run(sql, params = []) {
-  db.run(sql, params);
-  const lastId = queryOne('SELECT last_insert_rowid() as id');
-  const changes = queryOne('SELECT changes() as changes');
-  saveDb();
-  return { lastInsertRowid: lastId?.id, changes: changes?.changes };
+async function run(sql, params = []) {
+  const [result] = await pool.query(sql, params);
+  return { lastInsertRowid: result.insertId, changes: result.affectedRows };
 }
 
-module.exports = { initDb, query, queryOne, run, saveDb };
+module.exports = { initDb, query, queryOne, run };
