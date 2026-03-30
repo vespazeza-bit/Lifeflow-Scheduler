@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const path = require('path');
 const { initDb, query, queryOne, run } = require('./db');
 
 const app = express();
@@ -433,6 +434,17 @@ app.get('/api/cron/notify', async (req, res) => {
 
 // ─── Start Server ──────────────────────────────────────────────────────────────
 if (!process.env.VERCEL) {
+  // Serve React build in production
+  const clientDist = path.join(__dirname, '../client/dist');
+  if (require('fs').existsSync(clientDist)) {
+    app.use(express.static(clientDist));
+    app.get('*', (req, res) => {
+      if (!req.path.startsWith('/api')) {
+        res.sendFile(path.join(clientDist, 'index.html'));
+      }
+    });
+  }
+
   initDb().then(() => {
     startNotificationCron();
     app.listen(PORT, '0.0.0.0', () => {
